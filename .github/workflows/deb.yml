@@ -38,7 +38,9 @@ jobs:
       - name: Checkout sources again (real git repo, now that git exists)
         uses: actions/checkout@v4
       - name: Build .deb
-        run: ./packaging/build-deb.sh --out-dir dist --pin-commit "$GITHUB_SHA"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ./packaging/build-deb.sh --out-dir dist --pin-commit "$GITHUB_SHA"
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
         with:

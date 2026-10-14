@@ -40,6 +40,8 @@ jobs:
       - name: Checkout sources with git
         uses: actions/checkout@v4
       - name: Build .deb
+        env:
+          DEB_MAINTAINER: FA Saikat <fahimabrar.saikat@gmail.com>
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ./packaging/build-deb.sh --out-dir dist --pin-commit "$GITHUB_SHA"

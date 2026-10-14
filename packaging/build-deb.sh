@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build an interim Skyscraper .deb for ShopnoOS gaming ISOs.
+# Build a Skyscraper .deb for Debian-based systems.
 #
 # Recipe (per docs, RetroPie scriptmodule, Debian trixie host):
 #   pinned source -> qmake6 (PREFIX=/usr, SYSCONFDIR=/etc) -> make ->
@@ -34,7 +34,8 @@ PINNED_COMMIT="ccd49ae99a13ce037476f1d3cc3b646afca2059e"
 PKG_NAME="skyscraper"
 PKG_REVISION="1"
 ARCH="amd64"
-MAINTAINER="FA Saikat <fahimabrar.saikat@gmail.com>"
+# Neutral default; downstream forks override with DEB_MAINTAINER.
+MAINTAINER="${DEB_MAINTAINER:-Gemba <Gemba@users.noreply.github.com>}"
 
 OUT_DIR=""
 KEEP_TMP=0
@@ -172,8 +173,8 @@ Description: Powerful and versatile game data scraper for EmulationStation
  Skyscraper gathers game metadata, artwork and videos from online and
  local sources and generates EmulationStation gamelists.
  .
- This interim package installs the Skyscraper binary to /usr/bin and
- shared data files to /etc/skyscraper for ShopnoOS gaming images.
+ The package installs the Skyscraper binary to /usr/bin and shared
+ data files to /etc/skyscraper.
 Homepage: https://github.com/Gemba/skyscraper
 EOF
 

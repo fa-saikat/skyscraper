@@ -29,7 +29,6 @@
 
 set -euo pipefail
 
-PINNED_VERSION="3.21.1"
 PINNED_COMMIT="ccd49ae99a13ce037476f1d3cc3b646afca2059e"
 PKG_NAME="skyscraper"
 PKG_REVISION="1"
@@ -80,19 +79,16 @@ mkdir -p "$OUT_DIR"
 # commit explicitly via --pin-commit (a hardcoded pin can never survive the
 # commit that carries it, so the override is the release mechanism).
 HEAD_COMMIT="$(git rev-parse HEAD)"
-WANT_COMMIT="${PIN_COMMIT:-$PINNED_COMMIT}"
+# expand potential shortened commit
+WANT_COMMIT="$(git rev-parse ${PIN_COMMIT:-$PINNED_COMMIT})"
 if [[ "$HEAD_COMMIT" != "$WANT_COMMIT" ]]; then
-    echo "ERROR: HEAD ($HEAD_COMMIT) is not the expected commit ($WANT_COMMIT, v$PINNED_VERSION)." >&2
+    echo "ERROR: HEAD (${HEAD_COMMIT:0:8}) is not the expected commit (${WANT_COMMIT:0:8})." >&2
     echo "Check out the expected commit, or pass --pin-commit <sha> to build it deliberately." >&2
     exit 1
 fi
 
-TREE_VERSION="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' VERSION.ini | head -n 1)"
-if [[ "$TREE_VERSION" != "$PINNED_VERSION" ]]; then
-    echo "ERROR: VERSION.ini says $TREE_VERSION, expected $PINNED_VERSION." >&2
-    exit 1
-fi
-
+TREE_VERSION="$(sed -E 's/VERSION="(.+)"/\1/' VERSION.ini | head -n 1)"
+TREE_VERSION="$(echo "$TREE_VERSION" | sed -E "s/-dev/-$(git describe --always)/")"
 # --- Dependency check ----------------------------------------------------------
 for tool in qmake6 make g++ dpkg-shlibdeps dpkg-deb; do
     if ! command -v "$tool" >/dev/null 2>&1; then
@@ -102,10 +98,10 @@ for tool in qmake6 make g++ dpkg-shlibdeps dpkg-deb; do
     fi
 done
 
-DEB_VERSION="${PINNED_VERSION}-${PKG_REVISION}"
+DEB_VERSION="${TREE_VERSION}-${PKG_REVISION}"
 DEB_FILE="${PKG_NAME}_${DEB_VERSION}_${ARCH}.deb"
 
-TMP_BASE="$REPO_ROOT/.tmp/build-deb"
+TMP_BASE="$REPO_ROOT/build/debpkg"
 mkdir -p "$TMP_BASE"
 BUILD_DIR="$(mktemp -d "$TMP_BASE/build-XXXXXX")"
 STAGING_DIR="$(mktemp -d "$TMP_BASE/staging-XXXXXX")"
@@ -124,9 +120,9 @@ trap cleanup EXIT
 echo "==> Exporting clean tree of $HEAD_COMMIT to $BUILD_DIR"
 git archive HEAD | tar -x -C "$BUILD_DIR"
 
-echo "==> Building (qmake6 PREFIX=/usr SYSCONFDIR=/etc && make)"
+echo "==> Building Skyscraper v$TREE_VERSION"
 pushd "$BUILD_DIR" >/dev/null
-rm -f .qmake.stash
+make --ignore-errors distclean 2>/dev/null || true
 PREFIX=/usr SYSCONFDIR=/etc qmake6
 make -j"$(nproc)"
 
@@ -183,9 +179,9 @@ dpkg-deb --build "$STAGING_DIR" "$OUT_DIR/$DEB_FILE"
 
 echo "==> Verifying"
 dpkg-deb --field "$OUT_DIR/$DEB_FILE"
-echo "--- contents (first 45 entries) ---"
+echo "--- contents ---"
 # head closes the pipe early (SIGPIPE); without this, `set -o pipefail`
 # would fail the build on a successful listing.
-dpkg-deb --contents "$OUT_DIR/$DEB_FILE" | head -n 45 || true
+dpkg-deb --contents "$OUT_DIR/$DEB_FILE" || true
 
 echo "OK: $OUT_DIR/$DEB_FILE"

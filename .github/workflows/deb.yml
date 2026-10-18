@@ -1,7 +1,8 @@
 name: Debian package
 
-# Builds the interim Skyscraper .deb via packaging/build-deb.sh on
-# Debian trixie (matches the ShopnoOS ISO base; avoids libc mismatch).
+# Builds the interim Skyscraper .debs (amd64 + arm64) via
+# packaging/build-deb.sh on Debian trixie (matches the ShopnoOS ISO base;
+# avoids libc mismatch).
 #
 # Release flow: tag a commit and push the tag, e.g.
 #   git tag debian/3.21.1-1 && git push origin debian/3.21.1-1
@@ -23,7 +24,15 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            os: ubuntu-24.04
+          - arch: arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
     container:
       image: debian:trixie
     steps:
@@ -48,7 +57,7 @@ jobs:
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: skyscraper-deb
+          name: skyscraper-deb-${{ matrix.arch }}
           path: dist/*.deb
           if-no-files-found: error
 
@@ -62,10 +71,11 @@ jobs:
       # gh release create resolves the tag via git, so it needs a checkout.
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Download .deb artifact
+      - name: Download .deb artifacts (both architectures)
         uses: actions/download-artifact@v4
         with:
-          name: skyscraper-deb
+          pattern: skyscraper-deb-*
+          merge-multiple: true
           path: dist
       - name: Create GitHub release with .deb
         env:

@@ -11,7 +11,7 @@
 #   packaging/build-deb.sh [--out-dir DIR] [--keep-tmp] [--pin-commit SHA]
 #
 # Output:
-#   skyscraper_<VERSION>-1_amd64.deb  (default: repo root)
+#   skyscraper_<VERSION>-1_<ARCH>.deb  (default ARCH: this machine's dpkg arch)
 #
 # Notes:
 # - Builds from a clean `git archive HEAD` export, so the working tree stays
@@ -33,7 +33,8 @@ PINNED_VERSION="3.21.1"
 PINNED_COMMIT="ccd49ae99a13ce037476f1d3cc3b646afca2059e"
 PKG_NAME="skyscraper"
 PKG_REVISION="1"
-ARCH="amd64"
+# Arch follows the build container (dpkg); DEB_ARCH overrides if needed.
+ARCH="${DEB_ARCH:-$(dpkg --print-architecture)}"
 # Neutral default; downstream forks override with DEB_MAINTAINER.
 MAINTAINER="${DEB_MAINTAINER:-Gemba <Gemba@users.noreply.github.com>}"
 

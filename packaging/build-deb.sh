@@ -32,7 +32,7 @@ set -euo pipefail
 PINNED_VERSION="3.21.1"
 PINNED_COMMIT="ccd49ae99a13ce037476f1d3cc3b646afca2059e"
 PKG_NAME="skyscraper"
-PKG_REVISION="1"
+PKG_REVISION="2"
 # Arch follows the build container (dpkg); DEB_ARCH overrides if needed.
 ARCH="${DEB_ARCH:-$(dpkg --print-architecture)}"
 # Neutral default; downstream forks override with DEB_MAINTAINER.
